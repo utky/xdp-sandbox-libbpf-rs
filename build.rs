@@ -11,6 +11,8 @@ struct Config {
     skeleton_dir: PathBuf,
 }
 
+// .bpf.cで定義されるeBPFのプログラムモジュール
+// 入力となるソースファイルとlibbpf-cargoが生成するスケルトンの出力先を持つ
 #[derive(Debug)]
 struct BpfModule {
     name: String,
@@ -70,7 +72,6 @@ fn scan_input(config: &Config) -> Result<Vec<BpfModule>> {
     for entry in config.input_dir.read_dir()? {
         if let Ok(entry) = entry {
             let path = entry.path();
-            println!("{:?}", path);
             let metadata = path.metadata()?;
             let filename = path
                 .file_name()
@@ -86,7 +87,6 @@ fn scan_input(config: &Config) -> Result<Vec<BpfModule>> {
             }
         }
     }
-    println!("{:?}", result);
     Ok(result)
 }
 

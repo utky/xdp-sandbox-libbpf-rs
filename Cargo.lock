@@ -48,14 +48,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bef38d45163c2f1dde094a7dfd33ccf595c92905c8f8f4fdc18d06fb1037718a"
 
 [[package]]
-name = "bpf-tools-rs"
-version = "0.1.0"
-dependencies = [
- "libbpf-cargo",
- "libbpf-rs",
-]
-
-[[package]]
 name = "cargo-platform"
 version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -191,6 +183,15 @@ dependencies = [
  "strum_macros",
  "thiserror",
  "vsprintf",
+]
+
+[[package]]
+name = "libbpf-rs-xdp-sandbox"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "libbpf-cargo",
+ "libbpf-rs",
 ]
 
 [[package]]
