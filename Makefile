@@ -1,5 +1,8 @@
 help:
 	echo "help"
+
+trace:
+	sudo tail -f /sys/kernel/debug/tracing/trace_pipe
 server:
 	python3 tools/server.py
 
