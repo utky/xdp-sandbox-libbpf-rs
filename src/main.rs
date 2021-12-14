@@ -20,13 +20,15 @@ fn bump_memlock_rlimit() -> Result<()> {
 fn main() -> Result<()> {
     bump_memlock_rlimit()?;
 
-    let skel_builder = LocalPortLbSkelBuilder::default();
+    let skel_builder = UdpRedirectSkelBuilder::default();
     let open_skel = skel_builder.open()?;
     let mut skel = open_skel.load()?;
-    let _ = skel.progs_mut().lb_main().attach_xdp(1)?;
+    let link = skel.progs_mut().xdp_main().attach_xdp(1)?;
+    skel.links = UdpRedirectLinks {
+        xdp_main: Some(link),
+    };
 
     loop {
-        println!(".");
         thread::sleep(time::Duration::from_secs(1));
     }
 }

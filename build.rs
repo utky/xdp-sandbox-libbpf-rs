@@ -4,6 +4,7 @@ use std::fs;
 use std::io::Result;
 use std::path::{Path, PathBuf};
 
+#[derive(Debug)]
 struct Config {
     bpf_suffix: String,
     skeleton_suffix: String,
@@ -18,6 +19,24 @@ struct BpfModule {
     name: String,
     source_path: PathBuf,
     skeleton_path: PathBuf,
+}
+
+impl BpfModule {
+    fn new<P: AsRef<Path>>(config: &Config, source_path: P) -> BpfModule {
+        let name = source_path
+            .as_ref()
+            .file_name()
+            .expect("bad source path encoding")
+            .to_string_lossy()
+            .replace(&config.bpf_suffix, "");
+        let mut skeleton_path = PathBuf::from(&config.skeleton_dir);
+        skeleton_path.push(format!("{}{}", name, config.skeleton_suffix));
+        BpfModule {
+            name,
+            source_path: source_path.as_ref().to_owned(),
+            skeleton_path,
+        }
+    }
 }
 
 // 自動生成されたモジュールをexposeするモジュールを定義する
@@ -48,43 +67,24 @@ fn gen_mods(modules: &[BpfModule]) -> Result<()> {
     fs::write(path, &contents.as_bytes())
 }
 
-impl BpfModule {
-    fn new<P: AsRef<Path>>(config: &Config, source_path: P) -> BpfModule {
-        let name = source_path
-            .as_ref()
-            .file_name()
-            .expect("bad source path encoding")
-            .to_string_lossy()
-            .replace(&config.bpf_suffix, "");
-        let mut skeleton_path = PathBuf::from(&config.skeleton_dir);
-        skeleton_path.push(format!("{}{}", name, config.skeleton_suffix));
-        BpfModule {
-            name: name,
-            source_path: source_path.as_ref().to_owned(),
-            skeleton_path: skeleton_path,
-        }
-    }
-}
 
-// traverse input dir and return .bpf.c suffixed file path
+// ビルド対象のeBPFコードを走査してBpfModuleに組み立てる
 fn scan_input(config: &Config) -> Result<Vec<BpfModule>> {
     let mut result: Vec<BpfModule> = Vec::new();
-    for entry in config.input_dir.read_dir()? {
-        if let Ok(entry) = entry {
-            let path = entry.path();
-            let metadata = path.metadata()?;
-            let filename = path
-                .file_name()
-                .expect("file name should be got")
-                .to_str()
-                .expect("os string should be convert to str");
-            if filename.ends_with(".bpf.c") && metadata.is_file() {
-                println!(
-                    "cargo:rerun-if-changed={}",
-                    path.as_os_str().to_str().unwrap()
-                );
-                result.push(BpfModule::new(config, path));
-            }
+    for entry in (config.input_dir.read_dir()?).flatten() {
+        let path = entry.path();
+        let metadata = path.metadata()?;
+        let filename = path
+            .file_name()
+            .expect("file name should be got")
+            .to_str()
+            .expect("os string should be convert to str");
+        if filename.ends_with(".bpf.c") && metadata.is_file() {
+            println!(
+                "cargo:rerun-if-changed={}",
+                path.as_os_str().to_str().unwrap()
+            );
+            result.push(BpfModule::new(config, path));
         }
     }
     Ok(result)
